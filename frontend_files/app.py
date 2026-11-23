@@ -1,5 +1,6 @@
 # Streamlit frontend: collects inputs and calls the Flask backend
 import os
+import pandas as pd
 import requests
 import streamlit as st
 
@@ -40,4 +41,8 @@ st.subheader("Batch prediction")
 up = st.file_uploader("Upload CSV with the model feature columns", type="csv")
 if up is not None and st.button("Predict batch"):
     r = requests.post(f"{BACKEND_URL}/v1/predictbatch", files={"file": up.getvalue()}, timeout=60)
-    st.json(r.json()) if r.ok else st.error(f"Backend error: {r.status_code}")
+    if r.ok:
+        preds = pd.DataFrame({"Row": list(r.json().keys()), "Predicted_Sales_Total": list(r.json().values())})
+        st.dataframe(preds, hide_index=True)
+    else:
+        st.error(f"Backend error: {r.status_code}")
